@@ -65,10 +65,49 @@ export const authService = {
     }
   },
 
+  // Recuperación de Contraseña
+  async requestCode(correo) {
+    try {
+      const response = await api.post('/usuarios/request-code', { correo });
+      return response.data;
+    } catch (error) {
+      console.error('Error al solicitar código:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al enviar el código'
+      };
+    }
+  },
+
+  async verifyCodeAndResetPassword(correo, codigo, nuevaContrasena) {
+    try {
+      const response = await api.post('/usuarios/verify-code-reset', {
+        correo,
+        codigo,
+        nuevaContrasena
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al restablecer contraseña:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al restablecer contraseña'
+      };
+    }
+  },
+
   // Logout
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  async logout() {
+    try {
+      // Llamar al backend para limpiar cookies
+      await api.post('/usuarios/logout');
+    } catch (error) {
+      console.error('⚠️ Error al cerrar sesión en el servidor:', error);
+    } finally {
+      // Siempre limpiar localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   },
 
   // Get current user
@@ -99,5 +138,22 @@ export const authService = {
   isSuperAdmin() {
     const user = this.getCurrentUser();
     return user?.es_super_admin === true;
+  },
+
+  // Obtener usuario por ID (para info de vendedores en pedidos)
+  async getUserById(userId) {
+    try {
+      const response = await api.get(`/usuarios/${userId}`);
+      if (response.data.success) {
+        return {
+          success: true,
+          usuario: response.data.usuario || response.data.user
+        };
+      }
+      return { success: false, message: response.data.message };
+    } catch (error) {
+      console.error('❌ Error en getUserById:', error);
+      return { success: false, message: 'Error de conexión' };
+    }
   }
 };

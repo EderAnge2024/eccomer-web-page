@@ -5,8 +5,8 @@ export const orderService = {
   // Crear pedido multi-vendedor
   async createPedidoMultiVendedor(pedidoData) {
     try {
-      console.log('🌐 POST /pedidos/multi-vendedor', pedidoData);
-      const response = await api.post('/pedidos/multi-vendedor', pedidoData);
+      console.log('🌐 POST /pedidos/multi-vendor', pedidoData);
+      const response = await api.post('/pedidos/multi-vendor', pedidoData);
 
       if (response.data.success) {
         return {
@@ -48,6 +48,33 @@ export const orderService = {
       };
     } catch (error) {
       console.error('❌ Error en getPedidosByUser:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error de conexión',
+        pedidos: []
+      };
+    }
+  },
+
+  // Obtener TODOS los pedidos del sistema (Solo superadmin)
+  async getAllPedidos() {
+    try {
+      console.log('🌐 GET /pedidos (todos)');
+      const response = await api.get('/pedidos');
+
+      if (response.data.success) {
+        return {
+          success: true,
+          pedidos: response.data.pedidos || []
+        };
+      }
+
+      return {
+        success: false,
+        message: response.data.message || 'Error al cargar pedidos'
+      };
+    } catch (error) {
+      console.error('❌ Error en getAllPedidos:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error de conexión',
@@ -137,16 +164,44 @@ export const orderService = {
     }
   },
 
-  // Obtener detalles de pedido
-  async getPedidoById(pedidoId) {
+  // Obtener productos de un pedido específico (Sincronizado con App Móvil)
+  async getProductosByPedido(idPedido) {
     try {
-      console.log(`🌐 GET /pedidos/${pedidoId}`);
-      const response = await api.get(`/pedidos/${pedidoId}`);
+      console.log(`🌐 GET /pedido-productos/pedido/${idPedido}`);
+      const response = await api.get(`/pedido-productos/pedido/${idPedido}`);
 
       if (response.data.success) {
         return {
           success: true,
-          pedido: response.data.pedido
+          productos: response.data.productos || []
+        };
+      }
+
+      return {
+        success: false,
+        message: response.data.message || 'Error al cargar productos del pedido',
+        productos: []
+      };
+    } catch (error) {
+      console.error('❌ Error en getProductosByPedido:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error de conexión',
+        productos: []
+      };
+    }
+  },
+
+  // Obtener detalles de pedido maestro (incluye sub-pedidos y productos)
+  async getPedidoMaestroById(pedidoId) {
+    try {
+      console.log(`🌐 GET /pedidos/maestro/${pedidoId}`);
+      const response = await api.get(`/pedidos/maestro/${pedidoId}`);
+
+      if (response.data.success) {
+        return {
+          success: true,
+          resumen: response.data.resumen
         };
       }
 
@@ -155,7 +210,7 @@ export const orderService = {
         message: response.data.message || 'Pedido no encontrado'
       };
     } catch (error) {
-      console.error('❌ Error en getPedidoById:', error);
+      console.error('❌ Error en getPedidoMaestroById:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error de conexión'

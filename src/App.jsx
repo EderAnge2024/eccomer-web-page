@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import Cart from './pages/Cart'
 import Profile from './pages/Profile'
 import AdminPanel from './pages/AdminPanel'
+import ForgotPassword from './pages/ForgotPassword'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SearchProvider } from './context/SearchContext'
@@ -38,6 +39,7 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route 
             path="/profile" 
             element={

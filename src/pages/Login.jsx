@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -49,95 +50,95 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-4">
-      {/* Contenedor tipo móvil centrado */}
-      <div className="w-full max-w-[400px] bg-white rounded-3xl shadow-lg p-8">
-
+    <div className="login-page-premium">
+      <div className="login-card-premium">
         {/* Título y Subtítulo */}
-        <div className="text-center mb-10">
-          <h2 className="text-[32px] font-bold text-[#221329] mb-2">
+        <div className="login-header">
+          <h2 className="login-title-premium">
             Iniciar Sesión
           </h2>
-          <p className="text-base text-[#666]">
+          <p className="login-subtitle-premium">
             Bienvenido de nuevo
           </p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-
+        <form className="login-form-premium" onSubmit={handleSubmit}>
           {/* Campo Usuario */}
-          <div className="flex items-center bg-[#f9f9f9] border border-[#ddd] rounded-xl px-4 h-[50px] mb-4 transition-colors focus-within:border-[#221329]">
-            <User className="h-5 w-5 text-[#666] mr-3" />
-            <input
-              id="usuario"
-              name="usuario"
-              type="text"
-              autoComplete="username"
-              required
-              value={formData.usuario}
-              onChange={handleChange}
-              className="flex-1 bg-transparent border-none outline-none text-[#333] text-base placeholder-[#999] w-full h-full"
-              placeholder="Usuario"
-            />
+          <div className="input-group-premium">
+            <div className="input-wrapper-premium">
+              <User className="input-icon" size={20} />
+              <input
+                id="usuario"
+                name="usuario"
+                type="text"
+                autoComplete="username"
+                required
+                value={formData.usuario}
+                onChange={handleChange}
+                className="login-input-premium"
+                placeholder="Usuario"
+              />
+            </div>
           </div>
 
           {/* Campo Contraseña */}
-          <div className="flex items-center bg-[#f9f9f9] border border-[#ddd] rounded-xl px-4 h-[50px] mb-2 transition-colors focus-within:border-[#221329]">
-            <Lock className="h-5 w-5 text-[#666] mr-3" />
-            <input
-              id="contrasena"
-              name="contrasena"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              required
-              value={formData.contrasena}
-              onChange={handleChange}
-              className="flex-1 bg-transparent border-none outline-none text-[#333] text-base placeholder-[#999] w-full h-full"
-              placeholder="Contraseña"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="ml-2 text-[#666] hover:text-[#333] focus:outline-none p-1"
-            >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
+          <div className="input-group-premium">
+            <div className="input-wrapper-premium">
+              <Lock className="input-icon" size={20} />
+              <input
+                id="contrasena"
+                name="contrasena"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={formData.contrasena}
+                onChange={handleChange}
+                className="login-input-premium"
+                placeholder="Contraseña"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="password-toggle-premium"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           {/* Link Olvidaste contraseña */}
-          <div className="flex justify-end mb-6">
-            <button type="button" className="text-sm font-semibold text-[#221329] hover:opacity-80 bg-transparent border-none cursor-pointer transition-opacity">
-              ¿Olvidaste tu contraseña?
-            </button>
-          </div>
+          <Link 
+            to="/forgot-password" 
+            className="forgot-password-link bg-transparent border-none cursor-pointer text-sm text-gray-400 hover:text-purple-400 transition-colors"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
 
           {/* Botón Login */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-[54px] flex justify-center items-center rounded-xl bg-[#221329] shadow-md hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="btn-login-premium"
           >
             {loading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                <span className="text-white font-bold text-base">Cargando...</span>
-              </div>
+              <>
+                <div className="animate-spin-premium rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Cargando...</span>
+              </>
             ) : (
-              <span className="text-white font-bold text-base">Iniciar Sesión</span>
+              <span>Acceder ahora</span>
             )}
           </button>
         </form>
 
         {/* Registro Link */}
-        <div className="mt-8 flex justify-center items-center space-x-1">
-          <span className="text-sm text-[#666]">
-            ¿No tienes cuenta?
-          </span>
+        <div className="login-footer">
+          <span>¿No tienes cuenta?</span>
           <Link
             to="/register"
-            className="text-sm font-semibold text-[#221329] hover:underline"
+            className="register-link-premium"
           >
-            Regístrate
+            Regístrate aquí
           </Link>
         </div>
       </div>

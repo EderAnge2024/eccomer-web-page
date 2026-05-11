@@ -83,8 +83,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
+  const requestCode = async (correo) => {
+    try {
+      setLoading(true);
+      return await authService.requestCode(correo);
+    } catch (error) {
+      console.error('Error en contexto requestCode:', error);
+      return { success: false, message: 'Error al solicitar código' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (correo, codigo, nuevaContrasena) => {
+    try {
+      setLoading(true);
+      return await authService.verifyCodeAndResetPassword(correo, codigo, nuevaContrasena);
+    } catch (error) {
+      console.error('Error en contexto resetPassword:', error);
+      return { success: false, message: 'Error al restablecer contraseña' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
     toast.success('Sesión cerrada exitosamente');
   };
@@ -106,7 +130,9 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     isSuperAdmin,
     isAuthenticated: authService.isAuthenticated(),
-    refreshUser: loadUser
+    refreshUser: loadUser,
+    requestCode,
+    resetPassword
   };
 
   return (

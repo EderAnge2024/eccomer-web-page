@@ -1,9 +1,10 @@
 // Página de Registro
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, User, Mail, Phone, MapPin, Lock, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Phone, MapPin, Lock, UserPlus, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import './Register.css';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -41,12 +42,23 @@ const Register = () => {
       return false;
     }
 
-    if (formData.contrasena.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres');
+    if (formData.contrasena.length < 8) {
+      toast.error('La contraseña debe tener al menos 8 caracteres');
       return false;
     }
 
-    // Validar email
+    // Validar complejidad de contraseña (coincidir con backend)
+    const hasUpperCase = /[A-Z]/.test(formData.contrasena);
+    const hasLowerCase = /[a-z]/.test(formData.contrasena);
+    const hasNumbers = /\d/.test(formData.contrasena);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.contrasena);
+    const criteriaCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
+
+    if (criteriaCount < 3) {
+      toast.error('La contraseña debe contener al menos 3 de: mayúsculas, minúsculas, números o símbolos');
+      return false;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.correo)) {
       toast.error('Por favor ingresa un email válido');
@@ -66,7 +78,6 @@ const Register = () => {
     try {
       setLoading(true);
       
-      // Preparar datos para el registro
       const userData = {
         nombre: formData.nombre,
         apellido: formData.apellido,
@@ -75,7 +86,7 @@ const Register = () => {
         direccion: formData.direccion || '',
         usuario: formData.usuario,
         contrasena: formData.contrasena,
-        rol: 'cliente' // Por defecto cliente
+        rol: 'cliente'
       };
 
       const response = await register(userData);
@@ -83,242 +94,208 @@ const Register = () => {
       if (response.success) {
         toast.success('¡Registro exitoso! Ahora puedes iniciar sesión');
         navigate('/login');
+      } else {
+        toast.error(response.message || 'Error al registrar usuario');
       }
     } catch (error) {
       console.error('Error en registro:', error);
+      toast.error('Error inesperado durante el registro');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <UserPlus className="h-12 w-12 text-purple-600" />
+    <div className="register-page-premium">
+      <div className="register-card-premium">
+        <div className="register-header-premium">
+          <div className="register-icon-container">
+            <UserPlus size={40} strokeWidth={2.5} />
+          </div>
+          <h2 className="register-title-premium">Crear Cuenta</h2>
+          <p className="register-subtitle-premium">
+            ¿Ya tienes cuenta?{' '}
+            <Link to="/login" className="register-link-premium">
+              Inicia sesión aquí
+            </Link>
+          </p>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Crear Cuenta
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          ¿Ya tienes cuenta?{' '}
-          <Link
-            to="/login"
-            className="font-medium text-purple-600 hover:text-purple-500"
-          >
-            Inicia sesión aquí
-          </Link>
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Nombre y Apellido */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
-                  Nombre *
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    id="nombre"
-                    name="nombre"
-                    type="text"
-                    required
-                    value={formData.nombre}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                    placeholder="Nombre"
-                  />
-                  <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="apellido" className="block text-sm font-medium text-gray-700">
-                  Apellido *
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="apellido"
-                    name="apellido"
-                    type="text"
-                    required
-                    value={formData.apellido}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                    placeholder="Apellido"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="correo" className="block text-sm font-medium text-gray-700">
-                Email *
-              </label>
-              <div className="mt-1 relative">
+        <form className="register-form-premium" onSubmit={handleSubmit}>
+          {/* Nombre y Apellido */}
+          <div className="register-grid-premium">
+            <div className="input-group-premium">
+              <label className="label-premium">Nombre *</label>
+              <div className="input-wrapper-premium">
                 <input
-                  id="correo"
-                  name="correo"
-                  type="email"
-                  autoComplete="email"
+                  name="nombre"
+                  type="text"
                   required
-                  value={formData.correo}
+                  value={formData.nombre}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  placeholder="tu@email.com"
+                  className="input-field-register"
+                  placeholder="Nombre"
                 />
-                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <User className="input-icon-premium" size={20} />
               </div>
             </div>
 
-            {/* Teléfono */}
-            <div>
-              <label htmlFor="telefono" className="block text-sm font-medium text-gray-700">
-                Teléfono
-              </label>
-              <div className="mt-1 relative">
+            <div className="input-group-premium">
+              <label className="label-premium">Apellido *</label>
+              <div className="input-wrapper-premium">
                 <input
-                  id="telefono"
+                  name="apellido"
+                  type="text"
+                  required
+                  value={formData.apellido}
+                  onChange={handleChange}
+                  className="input-field-register"
+                  placeholder="Apellido"
+                  style={{ paddingLeft: '1.25rem' }} // Special case for second grid item
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="input-group-premium">
+            <label className="label-premium">Email *</label>
+            <div className="input-wrapper-premium">
+              <input
+                name="correo"
+                type="email"
+                required
+                value={formData.correo}
+                onChange={handleChange}
+                className="input-field-register"
+                placeholder="tu@email.com"
+              />
+              <Mail className="input-icon-premium" size={20} />
+            </div>
+          </div>
+
+          {/* Usuario y Teléfono */}
+          <div className="register-grid-premium">
+            <div className="input-group-premium">
+              <label className="label-premium">Usuario *</label>
+              <div className="input-wrapper-premium">
+                <input
+                  name="usuario"
+                  type="text"
+                  required
+                  value={formData.usuario}
+                  onChange={handleChange}
+                  className="input-field-register"
+                  placeholder="Usuario"
+                />
+                <User className="input-icon-premium" size={20} />
+              </div>
+            </div>
+
+            <div className="input-group-premium">
+              <label className="label-premium">Teléfono</label>
+              <div className="input-wrapper-premium">
+                <input
                   name="telefono"
                   type="tel"
                   value={formData.telefono}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  className="input-field-register"
                   placeholder="999 999 999"
                 />
-                <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Phone className="input-icon-premium" size={20} />
               </div>
             </div>
+          </div>
 
-            {/* Dirección */}
-            <div>
-              <label htmlFor="direccion" className="block text-sm font-medium text-gray-700">
-                Dirección
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="direccion"
-                  name="direccion"
-                  type="text"
-                  value={formData.direccion}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  placeholder="Tu dirección"
-                />
-                <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
+          {/* Dirección */}
+          <div className="input-group-premium">
+            <label className="label-premium">Dirección</label>
+            <div className="input-wrapper-premium">
+              <input
+                name="direccion"
+                type="text"
+                value={formData.direccion}
+                onChange={handleChange}
+                className="input-field-register"
+                placeholder="Tu dirección completa"
+              />
+              <MapPin className="input-icon-premium" size={20} />
             </div>
+          </div>
 
-            {/* Usuario */}
-            <div>
-              <label htmlFor="usuario" className="block text-sm font-medium text-gray-700">
-                Usuario *
-              </label>
-              <div className="mt-1 relative">
+          {/* Contraseñas */}
+          <div className="register-grid-premium">
+            <div className="input-group-premium">
+              <label className="label-premium">Contraseña *</label>
+              <div className="input-wrapper-premium">
                 <input
-                  id="usuario"
-                  name="usuario"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  value={formData.usuario}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  placeholder="Nombre de usuario"
-                />
-                <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
-            </div>
-
-            {/* Contraseña */}
-            <div>
-              <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700">
-                Contraseña *
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="contrasena"
                   name="contrasena"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
                   required
                   value={formData.contrasena}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  placeholder="Mínimo 6 caracteres"
+                  className="input-field-register"
+                  placeholder="Mín. 8 caracteres (A-z, 0-9)"
                 />
-                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Lock className="input-icon-premium" size={20} />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  className="password-toggle-premium"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
-            {/* Confirmar Contraseña */}
-            <div>
-              <label htmlFor="confirmarContrasena" className="block text-sm font-medium text-gray-700">
-                Confirmar Contraseña *
-              </label>
-              <div className="mt-1 relative">
+            <div className="input-group-premium">
+              <label className="label-premium">Confirmar *</label>
+              <div className="input-wrapper-premium">
                 <input
-                  id="confirmarContrasena"
                   name="confirmarContrasena"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
                   required
                   value={formData.confirmarContrasena}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  placeholder="Repite tu contraseña"
+                  className="input-field-register"
+                  placeholder="Mín. 8 caracteres (A-z, 0-9)"
                 />
-                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Lock className="input-icon-premium" size={20} />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  className="password-toggle-premium"
                 >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
-
-            {/* Botón Submit */}
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Registrando...
-                  </div>
-                ) : (
-                  'Crear Cuenta'
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Enlaces adicionales */}
-          <div className="mt-6 text-center">
-            <Link
-              to="/"
-              className="text-sm text-purple-600 hover:text-purple-500"
-            >
-              ← Volver al inicio
-            </Link>
           </div>
-        </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-register-premium"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                <span>Registrando...</span>
+              </>
+            ) : (
+              <>
+                <span>Crear Cuenta</span>
+                <UserPlus size={20} />
+              </>
+            )}
+          </button>
+        </form>
+
+        <Link to="/" className="back-link-premium">
+          <ArrowLeft size={16} />
+          <span>Volver al inicio</span>
+        </Link>
       </div>
     </div>
   );

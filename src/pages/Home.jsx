@@ -1,10 +1,12 @@
 // Página de inicio - Cliente
 import React, { useState, useEffect } from 'react';
 import { Search, Star, TrendingUp, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { productService } from '../services/productService';
 import ProductCard from '../components/ui/ProductCard';
+import ProductHeroSlider from '../components/ui/ProductHeroSlider';
 import toast from 'react-hot-toast';
 
 const Home = () => {
@@ -13,6 +15,7 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { isAuthenticated } = useAuth();
   const { agregarAlCarrito } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     cargarProductos();
@@ -78,7 +81,7 @@ const Home = () => {
   const masPopulares = productosFiltrados
     .filter(p => p.rating?.count > 0)
     .sort((a, b) => (b.rating?.count || 0) - (a.rating?.count || 0))
-    .slice(0, 6);
+    .slice(0, 25);
 
   if (loading) {
     return (
@@ -93,122 +96,76 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            ¡Bienvenido a TiendaWeb!
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 opacity-90">
-            Descubre los mejores productos al mejor precio
-          </p>
-
-          {/* Barra de búsqueda */}
-          <div className="max-w-md mx-auto relative">
-            <input
-              type="text"
-              placeholder="Buscar productos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 pl-12 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-300"
-            />
-            <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
-          </div>
-        </div>
-      </section>
-
-      {/* Estadísticas */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center transform transition-all hover:scale-105 hover:shadow-md">
-              <div className="bg-purple-100 p-4 rounded-full mb-4">
-                <Package className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-3xl font-extrabold text-gray-900">{productos.length}</h3>
-              <p className="text-gray-500 font-medium">Productos Disponibles</p>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center transform transition-all hover:scale-105 hover:shadow-md">
-              <div className="bg-yellow-100 p-4 rounded-full mb-4">
-                <Star className="h-8 w-8 text-yellow-500" />
-              </div>
-              <h3 className="text-3xl font-extrabold text-gray-900">4.8</h3>
-              <p className="text-gray-500 font-medium">Calificación Promedio</p>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center transform transition-all hover:scale-105 hover:shadow-md">
-              <div className="bg-green-100 p-4 rounded-full mb-4">
-                <TrendingUp className="h-8 w-8 text-green-500" />
-              </div>
-              <h3 className="text-3xl font-extrabold text-gray-900">98%</h3>
-              <p className="text-gray-500 font-medium">Satisfacción del Cliente</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Section with Dynamic Slider */}
+      <ProductHeroSlider />
 
       {/* Productos más populares */}
       {masPopulares.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <section className="py-24 bg-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-40">
+            <div className="text-center mb-16 relative mt-20">
+              <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
                 Los Más Populares
               </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Descubre los productos favoritos de nuestros clientes
-              </p>
+              <div className="w-24 h-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 mx-auto rounded-full mb-6"></div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Layout de Grilla Forzado con CSS Directo - 5 por fila (Garantizado) */}
+            <div
+              className="grid-container-forced"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                gap: '15px',
+                width: '100%',
+                justifyContent: 'start'
+              }}
+            >
               {masPopulares.map((producto, index) => (
-                <ProductCard
+                <div
                   key={`popular-${producto.id}-${index}`}
-                  product={producto}
-                  onAddToCart={handleAddToCart}
-                />
+                  style={{ width: '100%', minHeight: '400px' }}
+                  className="transition-all duration-300 hover:-translate-y-2"
+                >
+                  <ProductCard
+                    product={producto}
+                    onAddToCart={handleAddToCart}
+                  />
+                </div>
               ))}
             </div>
+
+            {/* Estilos adicionales para asegurar el comportamiento de 5 columnas en XL */}
+            <style dangerouslySetInnerHTML={{
+              __html: `
+              @media (min-width: 1280px) {
+                .grid-container-forced {
+                  grid-template-columns: repeat(5, 1fr) !important;
+                }
+              }
+              @media (max-width: 1279px) and (min-width: 1024px) {
+                .grid-container-forced {
+                  grid-template-columns: repeat(4, 1fr) !important;
+                }
+              }
+              @media (max-width: 1023px) and (min-width: 768px) {
+                .grid-container-forced {
+                  grid-template-columns: repeat(3, 1fr) !important;
+                }
+              }
+              @media (max-width: 767px) {
+                .grid-container-forced {
+                  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+                }
+              }
+            `}} />
           </div>
+
+          {/* Adorno lateral sutil */}
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-purple-100 rounded-full blur-3xl opacity-50"></div>
+          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-indigo-100 rounded-full blur-3xl opacity-50"></div>
         </section>
       )}
-
-      {/* Todos los productos */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              {searchTerm ? `Resultados para "${searchTerm}"` : 'Todos los Productos'}
-            </h2>
-            <p className="text-gray-600">
-              {productosFiltrados.length} productos encontrados
-            </p>
-          </div>
-
-          {productosFiltrados.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No se encontraron productos
-              </h3>
-              <p className="text-gray-500">
-                Intenta con otros términos de búsqueda
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {productosFiltrados.map((producto, index) => (
-                <ProductCard
-                  key={`product-${producto.id}-${index}`}
-                  product={producto}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* CTA Section */}
       {!isAuthenticated && (

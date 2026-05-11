@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../services/orderService';
+import { productService } from '../../services/productService';
 import { comprobanteService } from '../../services/comprobanteService';
-import { ShoppingCart, ChevronDown, ChevronUp, User, Mail, Phone, MapPin, MessageCircle, FileText, Download, Eye, X, CheckCircle } from 'lucide-react';
+import { ShoppingCart, ChevronDown, ChevronUp, User, Mail, Phone, MapPin, MessageCircle, FileText, Download, Eye, X, CheckCircle, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './AdminOrders.css';
 
@@ -12,6 +13,14 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [expandedPedido, setExpandedPedido] = useState(null);
   const [filterMode, setFilterMode] = useState('my_products'); // 'my_products' or 'all'
+
+  // Estados para productos del pedido (Sincronizado con App Móvil)
+  // Cache de productos por pedido: { id_pedido: [productos] }
+  const [productosPedido, setProductosPedido] = useState({});
+  // Cache de info detallada de productos: { id_producto: { title, image, ... } }
+  const [productosInfo, setProductosInfo] = useState({});
+  // Loading de productos por pedido
+  const [loadingProductos, setLoadingProductos] = useState({});
 
   // Estados para comprobante
   const [modalComprobante, setModalComprobante] = useState(false);
@@ -30,13 +39,7 @@ const AdminOrders = () => {
       if (filterMode === 'all' && isSuperAdmin()) {
         // Opción para super admin de ver absolutamente TODO
         console.log('🌐 Obteniendo todos los pedidos del sistema (Super Admin)');
-        const apiResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/pedidos`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const data = await apiResponse.json();
-        response = { success: data.success, pedidos: data.pedidos, message: data.message };
+        response = await orderService.getAllPedidos();
       } else {
         // Lógica de la app: Pedidos que contienen productos del admin
         console.log(`🌐 Obteniendo pedidos con productos del admin: ${user.id_usuario}`);
@@ -53,6 +56,54 @@ const AdminOrders = () => {
       toast.error('Error al cargar pedidos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Cargar productos de un pedido específico (mismo patrón que App Móvil)
+  const cargarProductosPedido = async (id_pedido) => {
+    try {
+      // Evitar cargar si ya están en memoria
+      if (productosPedido[id_pedido]) {
+        return;
+      }
+
+      setLoadingProductos(prev => ({ ...prev, [id_pedido]: true }));
+
+      const response = await orderService.getProductosByPedido(id_pedido);
+      if (response.success) {
+        setProductosPedido(prev => ({
+          ...prev,
+          [id_pedido]: response.productos,
+        }));
+
+        // Cargar información detallada de cada producto (nombre, imagen)
+        for (const producto of response.productos) {
+          if (!productosInfo[producto.id_producto]) {
+            cargarInfoProducto(producto.id_producto);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando productos del pedido:', error);
+    } finally {
+      setLoadingProductos(prev => ({ ...prev, [id_pedido]: false }));
+    }
+  };
+
+  // Cargar información detallada de un producto (mismo patrón que App Móvil)
+  const cargarInfoProducto = async (id_producto) => {
+    try {
+      // Convertir id_producto a integer (viene como string desde pedido_producto)
+      const id_producto_int = parseInt(id_producto, 10);
+      const response = await productService.getProductoById(id_producto_int);
+      if (response.success && response.producto) {
+        setProductosInfo(prev => ({
+          ...prev,
+          [id_producto]: response.producto,
+        }));
+      }
+    } catch (error) {
+      console.error('Error cargando info del producto:', error);
     }
   };
 
@@ -141,8 +192,14 @@ const AdminOrders = () => {
     });
   };
 
-  const toggleExpandPedido = (id_pedido) => {
-    setExpandedPedido(expandedPedido === id_pedido ? null : id_pedido);
+  // Al expandir un pedido, cargar sus productos (mismo patrón que App Móvil)
+  const toggleExpandPedido = async (id_pedido) => {
+    if (expandedPedido === id_pedido) {
+      setExpandedPedido(null);
+    } else {
+      setExpandedPedido(id_pedido);
+      await cargarProductosPedido(id_pedido);
+    }
   };
 
   if (loading) {
@@ -209,6 +266,8 @@ const AdminOrders = () => {
           {pedidos.map((pedido) => {
             const isExpanded = expandedPedido === pedido.id_pedido;
             const estadoActual = pedido.estado || 'Pendiente';
+            const productos = productosPedido[pedido.id_pedido] || [];
+            const isLoadingProducts = loadingProductos[pedido.id_pedido];
 
             return (
               <div key={pedido.id_pedido} className="order-card">
@@ -298,6 +357,96 @@ const AdminOrders = () => {
                           )}
                         </div>
                       )}
+                    </div>
+
+                    {/* Productos del Pedido - Filtrados para mostrar SOLO los del vendedor logueado */}
+                    <div className="order-products-section">
+                      <div className="order-section">
+                        <div className="section-header">
+                          <Package size={20} />
+                          <h4>Mis Productos en este Pedido</h4>
+                          <span className="products-count">{productos.filter(p => {
+                            const info = productosInfo[p.id_producto];
+                            return info?.id_usuario === user.id_usuario;
+                          }).length} producto{productos.filter(p => {
+                            const info = productosInfo[p.id_producto];
+                            return info?.id_usuario === user.id_usuario;
+                          }).length !== 1 ? 's' : ''}</span>
+                        </div>
+
+                        {isLoadingProducts ? (
+                          <div className="products-loading">
+                            <div className="spinner-small"></div>
+                            <p>Cargando productos...</p>
+                          </div>
+                        ) : productos.length > 0 ? (
+                          <>
+                            <table className="products-table">
+                              <thead>
+                                <tr>
+                                  <th>Producto</th>
+                                  <th>Cant.</th>
+                                  <th>Precio Unit.</th>
+                                  <th>Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {productos
+                                  .filter(p => {
+                                    const info = productosInfo[p.id_producto];
+                                    return info?.id_usuario === user.id_usuario;
+                                  })
+                                  .map((prod, idx) => {
+                                    const info = productosInfo[prod.id_producto];
+                                    return (
+                                      <tr key={idx}>
+                                        <td>
+                                          <div className="product-row-info">
+                                            {info?.image ? (
+                                              <img
+                                                src={info.image}
+                                                alt={info.title}
+                                                className="product-row-image"
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                              />
+                                            ) : (
+                                              <div className="product-row-image-placeholder">
+                                                <Package size={20} color="#ccc" />
+                                              </div>
+                                            )}
+                                            <div>
+                                              <div className="product-row-name">
+                                                {info?.title || `Producto #${prod.id_producto}`}
+                                              </div>
+                                              {info?.category && (
+                                                <div className="product-row-category">
+                                                  {info.category}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td>{prod.cantidad}</td>
+                                        <td>S/ {parseFloat(prod.precio).toFixed(2)}</td>
+                                        <td className="product-subtotal">S/ {(prod.cantidad * parseFloat(prod.precio)).toFixed(2)}</td>
+                                      </tr>
+                                    );
+                                  })}
+                              </tbody>
+                            </table>
+                            <div className="products-total-row">
+                              <span>Total de mis productos: S/ {productos
+                                .filter(p => {
+                                  const info = productosInfo[p.id_producto];
+                                  return info?.id_usuario === user.id_usuario;
+                                })
+                                .reduce((sum, p) => sum + (p.cantidad * parseFloat(p.precio)), 0).toFixed(2)}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="products-empty">No hay productos de tu propiedad en este pedido</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="order-actions-section">
